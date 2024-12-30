@@ -1,0 +1,72 @@
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - deploy
+
+default:
+  tags:
+    - mtfk
+
+
+build-frontend:       # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+    - echo -n $password | docker login -u $username --password-stdin $img_registry
+    - docker build -t kaitokissurlips/frontend-image:v1 -f ./lab3v2/frontend/Dockerfile .
+    - docker push kaitokissurlips/frontend-image:v0
+  only:
+    - main
+    - origin/main
+build-backend:
+  stage: build
+  script:
+    - echo -n $password | docker login -u $username --password-stdin $img_registry
+    - cat ./lab3v2/backend/Dockerfile
+    - docker build -t kaitokissurlips/backend-image:v1 -f ./lab3v2/backend/Dockerfile .
+    - docker push kaitokissurlips/backend-image:v0
+  only:
+    - main
+    - origin/main
+test-stage:
+  stage: test 
+  #Motherfucker I was doing smth stupid with git then it's broke my test with SonarQuebec
+  #Fix it if you have time for it 
+
+deploy:
+  stage: deploy
+  script:  
+    - pwd
+    - kubectl apply -f ./lab3v2/*.yaml
+    # - kubectl get namespaces
+    - kubectl apply -f ./lab3v2/backend/backend-deployment.yaml
+    - kubectl apply -f ./lab3v2/backend/backend-service.yaml
+    - kubectl apply -f ./lab3v2/backend/hpa-backend.yaml
+    - kubectl apply -f ./lab3v2/frontend/frontend-deployment.yaml
+    - kubectl apply -f ./lab3v2/frontend/frontend-service.yaml
+    - kubectl apply -f ./lab3v2/frontend/hpa-frontend.yaml
+  only:
+    - main
+    - origin/main
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# unit-test-job:   # This job runs in the test stage.
+#   stage: test    # It only starts when the job in the build stage completes successfully.
+#   script:
+#     - echo "Running unit tests... This will take about 60 seconds."
+#     - sleep 60
+#     - echo "Code coverage is 90%"
+
